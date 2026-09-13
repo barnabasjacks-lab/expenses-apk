@@ -9,6 +9,7 @@ import com.example.data.TransactionEntity
 import com.example.data.TransactionRepository
 import com.example.data.TransactionType
 import com.example.ui.theme.ThemeMode
+import com.example.util.AppLanguage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +32,7 @@ data class DashboardUiState(
     val selectedFilter: FilterType = FilterType.ALL,
     val searchQuery: String = "",
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val language: AppLanguage = AppLanguage.SW,
     val categoryExpenses: Map<String, Double> = emptyMap()
 )
 
@@ -40,6 +42,9 @@ class ExpenseTrackerViewModel(application: Application) : AndroidViewModel(appli
 
     private val _themeMode = MutableStateFlow(loadSavedThemeMode())
     val themeMode: StateFlow<ThemeMode> = _themeMode
+
+    private val _language = MutableStateFlow(loadSavedLanguage())
+    val language: StateFlow<AppLanguage> = _language
 
     private val _selectedFilter = MutableStateFlow(FilterType.ALL)
     private val _searchQuery = MutableStateFlow("")
@@ -53,8 +58,9 @@ class ExpenseTrackerViewModel(application: Application) : AndroidViewModel(appli
         repository.allTransactions,
         _selectedFilter,
         _searchQuery,
-        _themeMode
-    ) { transactions, filter, query, theme ->
+        _themeMode,
+        _language
+    ) { transactions, filter, query, theme, lang ->
         var incomeSum = 0.0
         var expenseSum = 0.0
         val categoryExpenseMap = mutableMapOf<String, Double>()
@@ -94,12 +100,13 @@ class ExpenseTrackerViewModel(application: Application) : AndroidViewModel(appli
             selectedFilter = filter,
             searchQuery = query,
             themeMode = theme,
+            language = lang,
             categoryExpenses = categoryExpenseMap
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = DashboardUiState(themeMode = _themeMode.value)
+        initialValue = DashboardUiState(themeMode = _themeMode.value, language = _language.value)
     )
 
     fun setFilter(filter: FilterType) {
@@ -108,6 +115,21 @@ class ExpenseTrackerViewModel(application: Application) : AndroidViewModel(appli
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun toggleLanguage() {
+        val nextLang = if (_language.value == AppLanguage.SW) AppLanguage.EN else AppLanguage.SW
+        _language.value = nextLang
+        prefs.edit().putString("app_language", nextLang.name).apply()
+    }
+
+    private fun loadSavedLanguage(): AppLanguage {
+        val saved = prefs.getString("app_language", AppLanguage.SW.name)
+        return try {
+            AppLanguage.valueOf(saved ?: AppLanguage.SW.name)
+        } catch (e: Exception) {
+            AppLanguage.SW
+        }
     }
 
     fun setThemeMode(mode: ThemeMode) {

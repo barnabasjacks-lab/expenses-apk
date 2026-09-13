@@ -9,6 +9,10 @@ import java.util.Locale
 object Formatters {
     private val tzsFormat = DecimalFormat("#,##0")
 
+    fun formatCurrency(amount: Double): String {
+        return "TZS " + tzsFormat.format(Math.abs(amount))
+    }
+
     fun formatTzs(amount: Double, includeSign: Boolean = false, isIncome: Boolean? = null): String {
         val formattedNumber = tzsFormat.format(Math.abs(amount))
         return when {
@@ -32,8 +36,8 @@ object Formatters {
         val timeStr = SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(timeMillis))
 
         return when {
-            isToday -> "Today, $timeStr"
-            isYesterday -> "Yesterday, $timeStr"
+            isToday -> "Leo, $timeStr"
+            isYesterday -> "Jana, $timeStr"
             else -> SimpleDateFormat("d MMM yyyy, HH:mm", Locale.getDefault()).format(Date(timeMillis))
         }
     }

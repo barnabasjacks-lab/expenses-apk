@@ -38,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -77,7 +79,7 @@ fun TransactionDetailDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Transaction Details",
+                        text = "Maelezo ya Muamala",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
@@ -88,7 +90,7 @@ fun TransactionDetailDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
+                            contentDescription = "Funga",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -99,15 +101,13 @@ fun TransactionDetailDialog(
                 // Amount Banner
                 val isIncome = transaction.type == TransactionType.INCOME
                 val icon = Categories.getIconForCategory(transaction.category, transaction.type)
+                val activeColor = if (isIncome) Color(0xFF22C55E) else Color(0xFFEF4444)
 
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clip(RoundedCornerShape(16.dp))
-                        .background(
-                            if (isIncome) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
-                            else MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                        )
+                        .background(activeColor.copy(alpha = 0.12f))
                         .padding(16.dp),
                     contentAlignment = Alignment.Center
                 ) {
@@ -116,17 +116,13 @@ fun TransactionDetailDialog(
                             modifier = Modifier
                                 .size(48.dp)
                                 .clip(CircleShape)
-                                .background(
-                                    if (isIncome) MaterialTheme.colorScheme.primaryContainer
-                                    else MaterialTheme.colorScheme.errorContainer
-                                ),
+                                .background(activeColor.copy(alpha = 0.2f)),
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 imageVector = icon,
                                 contentDescription = null,
-                                tint = if (isIncome) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.error,
+                                tint = activeColor,
                                 modifier = Modifier.size(24.dp)
                             )
                         }
@@ -134,21 +130,19 @@ fun TransactionDetailDialog(
                         Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = if (isIncome) "Income (Mapato)" else "Expense (Matumizi)",
+                            text = if (isIncome) "Mapato (Income)" else "Matumizi (Expense)",
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (isIncome) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.error,
+                            color = activeColor,
                             fontWeight = FontWeight.SemiBold
                         )
 
                         Spacer(modifier = Modifier.height(4.dp))
 
                         Text(
-                            text = Formatters.formatTzs(transaction.amount, includeSign = true, isIncome = isIncome),
+                            text = (if (isIncome) "+ " else "- ") + Formatters.formatCurrency(transaction.amount),
                             style = MaterialTheme.typography.headlineMedium,
                             fontWeight = FontWeight.ExtraBold,
-                            color = if (isIncome) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.error
+                            color = activeColor
                         )
                     }
                 }
@@ -158,7 +152,7 @@ fun TransactionDetailDialog(
                 // Detail Rows
                 DetailRow(
                     icon = Icons.Default.Category,
-                    label = "Category",
+                    label = "Kundi (Category)",
                     value = transaction.category
                 )
 
@@ -166,15 +160,15 @@ fun TransactionDetailDialog(
 
                 DetailRow(
                     icon = Icons.Default.Description,
-                    label = "Description",
-                    value = if (transaction.description.isBlank()) "No description provided" else transaction.description
+                    label = "Maelezo / Njia ya Malipo",
+                    value = if (transaction.description.isBlank()) "Bila maelezo ya ziada" else transaction.description
                 )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
                 DetailRow(
                     icon = Icons.Default.CalendarMonth,
-                    label = "Date & Time",
+                    label = "Tarehe & Muda",
                     value = Formatters.formatDate(transaction.dateMillis)
                 )
 
@@ -198,11 +192,11 @@ fun TransactionDetailDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete",
+                            contentDescription = "Futa",
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Delete")
+                        Text("Futa")
                     }
 
                     Button(
@@ -215,11 +209,11 @@ fun TransactionDetailDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit",
+                            contentDescription = "Hariri",
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text("Edit")
+                        Text("Hariri")
                     }
                 }
             }
@@ -229,8 +223,8 @@ fun TransactionDetailDialog(
     if (showDeleteConfirmation) {
         AlertDialog(
             onDismissRequest = { showDeleteConfirmation = false },
-            title = { Text("Delete Transaction?") },
-            text = { Text("Are you sure you want to delete this transaction of ${Formatters.formatTzs(transaction.amount)}? This action cannot be undone.") },
+            title = { Text("Futa Muamala Huu?") },
+            text = { Text("Je, una uhakika unataka kufuta muamala huu wa ${Formatters.formatCurrency(transaction.amount)}? Hautaweza kurudishwa.") },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -241,12 +235,12 @@ fun TransactionDetailDialog(
                         contentColor = MaterialTheme.colorScheme.error
                     )
                 ) {
-                    Text("Delete", fontWeight = FontWeight.Bold)
+                    Text("Ndio, Futa", fontWeight = FontWeight.Bold)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteConfirmation = false }) {
-                    Text("Cancel")
+                    Text("Ghairi")
                 }
             }
         )
@@ -254,8 +248,8 @@ fun TransactionDetailDialog(
 }
 
 @Composable
-private fun DetailRow(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+fun DetailRow(
+    icon: ImageVector,
     label: String,
     value: String
 ) {
@@ -263,18 +257,16 @@ private fun DetailRow(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(
-            modifier = Modifier
-                .size(36.dp)
-                .clip(CircleShape)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
-            contentAlignment = Alignment.Center
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            modifier = Modifier.size(36.dp)
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(18.dp)
+                modifier = Modifier.padding(8.dp)
             )
         }
         Spacer(modifier = Modifier.width(12.dp))

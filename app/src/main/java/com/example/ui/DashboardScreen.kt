@@ -25,21 +25,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.TrendingDown
 import androidx.compose.material.icons.automirrored.filled.TrendingUp
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDownward
-import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DeleteSweep
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Wallet
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -86,6 +84,8 @@ import com.example.ui.theme.ExpenseRedLight
 import com.example.ui.theme.IncomeGreenDark
 import com.example.ui.theme.IncomeGreenLight
 import com.example.ui.theme.ThemeMode
+import com.example.util.AppLanguage
+import com.example.util.AppStrings
 import com.example.util.Formatters
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -102,12 +102,13 @@ fun DashboardScreen(
         ThemeMode.SYSTEM -> isSystemDark
     }
 
+    val lang = uiState.language
+
     var showAddDialog by remember { mutableStateOf(false) }
     var addDialogInitialType by remember { mutableStateOf(TransactionType.EXPENSE) }
     var transactionToEdit by remember { mutableStateOf<TransactionEntity?>(null) }
     var transactionToView by remember { mutableStateOf<TransactionEntity?>(null) }
     var showResetConfirmation by remember { mutableStateOf(false) }
-    var showInfoDialog by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showSearchField by remember { mutableStateOf(false) }
 
@@ -118,26 +119,26 @@ fun DashboardScreen(
                 title = {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = MaterialTheme.colorScheme.primaryContainer,
+                            shape = RoundedCornerShape(10.dp),
+                            color = Color(0xFF007A3D).copy(alpha = 0.15f),
                             modifier = Modifier.padding(end = 10.dp)
                         ) {
                             Text(
                                 text = "🇹🇿 TZS",
                                 style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color(0xFF007A3D),
                                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
                         }
                         Column {
                             Text(
-                                text = "TZS Expense Tracker",
+                                text = AppStrings.appTitle(lang),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = "Tanzanian Shillings",
+                                text = AppStrings.appSubtitle(lang),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -145,7 +146,35 @@ fun DashboardScreen(
                     }
                 },
                 actions = {
-                    // Search toggle
+                    // Language Switcher button
+                    Surface(
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.secondaryContainer,
+                        modifier = Modifier
+                            .padding(end = 4.dp)
+                            .clickable { viewModel.toggleLanguage() }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = "Badili Lugha / Language",
+                                tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = if (lang == AppLanguage.SW) "🇹🇿 SWA" else "🇬🇧 ENG",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer
+                            )
+                        }
+                    }
+
+                    // Search button
                     IconButton(
                         onClick = {
                             showSearchField = !showSearchField
@@ -153,54 +182,52 @@ fun DashboardScreen(
                                 viewModel.setSearchQuery("")
                             }
                         },
-                        modifier = Modifier.testTag("top_search_button")
+                        modifier = Modifier.testTag("search_toggle_button")
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search"
+                            imageVector = if (showSearchField) Icons.Default.Clear else Icons.Default.Search,
+                            contentDescription = if (showSearchField) AppStrings.clearSearch(lang) else "Tafuta"
                         )
                     }
 
-                    // Quick Dark Mode Toggle for optimal visibility
+                    // Dark mode toggle
                     IconButton(
                         onClick = { viewModel.toggleDarkMode() },
                         modifier = Modifier.testTag("theme_toggle_button")
                     ) {
                         Icon(
                             imageVector = if (isEffectiveDark) Icons.Default.LightMode else Icons.Default.DarkMode,
-                            contentDescription = if (isEffectiveDark) "Switch to Light Mode" else "Switch to Dark Mode",
-                            tint = if (isEffectiveDark) Color(0xFFFFD166) else MaterialTheme.colorScheme.primary
+                            contentDescription = "Badili Theme"
                         )
                     }
 
-                    // More Menu
+                    // Overflow menu
                     Box {
                         IconButton(
                             onClick = { showMenu = true },
-                            modifier = Modifier.testTag("top_more_button")
+                            modifier = Modifier.testTag("more_options_button")
                         ) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = "More Options"
+                                contentDescription = "Machaguo zaidi"
                             )
                         }
-
                         DropdownMenu(
                             expanded = showMenu,
                             onDismissRequest = { showMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("About & Currency Info") },
+                                text = { Text(if (lang == AppLanguage.SW) "Badili Lugha (English)" else "Switch to Kiswahili") },
                                 onClick = {
+                                    viewModel.toggleLanguage()
                                     showMenu = false
-                                    showInfoDialog = true
                                 },
                                 leadingIcon = {
-                                    Icon(Icons.Default.Info, contentDescription = null)
+                                    Icon(Icons.Default.Language, contentDescription = null)
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text("Reset Balances to TZS 0") },
+                                text = { Text(AppStrings.resetData(lang)) },
                                 onClick = {
                                     showMenu = false
                                     showResetConfirmation = true
@@ -221,194 +248,147 @@ fun DashboardScreen(
                 )
             )
         }
-    ) { innerPadding ->
+    ) { paddingValues ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding),
+                .padding(paddingValues),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Search Bar (if expanded)
+            // Optional Search bar
             if (showSearchField) {
-                item {
+                item(key = "search_field") {
                     OutlinedTextField(
                         value = uiState.searchQuery,
                         onValueChange = { viewModel.setSearchQuery(it) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .testTag("search_text_field"),
-                        placeholder = { Text("Search transactions or categories...") },
+                            .testTag("search_text_input"),
+                        placeholder = { Text(AppStrings.searchPlaceholder(lang)) },
                         leadingIcon = {
                             Icon(Icons.Default.Search, contentDescription = null)
                         },
                         trailingIcon = {
                             if (uiState.searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { viewModel.setSearchQuery("") }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Clear")
+                                    Icon(Icons.Default.Clear, contentDescription = AppStrings.clearSearch(lang))
                                 }
                             }
                         },
                         singleLine = true,
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(16.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant
+                        )
                     )
                 }
             }
 
-            // Financial Dashboard Summary Card
-            item {
-                BalanceOverviewCard(
+            // Hero Tanzanian Card
+            item(key = "balance_card") {
+                TanzaniaBalanceCard(
                     balance = uiState.totalBalance,
                     income = uiState.totalIncome,
                     expense = uiState.totalExpense,
-                    isDark = isEffectiveDark
+                    lang = lang,
+                    isDark = isEffectiveDark,
+                    onAddIncome = {
+                        addDialogInitialType = TransactionType.INCOME
+                        transactionToEdit = null
+                        showAddDialog = true
+                    },
+                    onAddExpense = {
+                        addDialogInitialType = TransactionType.EXPENSE
+                        transactionToEdit = null
+                        showAddDialog = true
+                    }
                 )
             }
 
-            // Quick Add Action Buttons
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    // Add Income Button
-                    Button(
-                        onClick = {
-                            addDialogInitialType = TransactionType.INCOME
-                            transactionToEdit = null
-                            showAddDialog = true
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(52.dp)
-                            .testTag("add_income_quick_button"),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "+ Income (Mapato)",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    // Add Expense Button
-                    Button(
-                        onClick = {
-                            addDialogInitialType = TransactionType.EXPENSE
-                            transactionToEdit = null
-                            showAddDialog = true
-                        },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(52.dp)
-                            .testTag("add_expense_quick_button"),
-                        shape = RoundedCornerShape(14.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        )
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Remove,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "− Expense (Matumizi)",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-
-            // Category Spending Quick Breakdown (if expenses exist)
-            if (uiState.categoryExpenses.isNotEmpty()) {
-                item {
-                    CategoryBreakdownSection(
+            // Quick Category Overview / Progress if expenses exist
+            if (uiState.totalExpense > 0 && uiState.categoryExpenses.isNotEmpty()) {
+                item(key = "top_expense_card") {
+                    TopExpenseCategoriesCard(
                         categoryExpenses = uiState.categoryExpenses,
-                        totalExpense = uiState.totalExpense
+                        totalExpense = uiState.totalExpense,
+                        lang = lang
                     )
                 }
             }
 
-            // Transactions Header & Filter Chips
-            item {
-                Column(modifier = Modifier.fillMaxWidth()) {
+            // Filter Tabs
+            item(key = "filter_tabs") {
+                Column {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "Transaction History",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceVariant,
-                                modifier = Modifier.size(24.dp)
-                            ) {
-                                Box(contentAlignment = Alignment.Center) {
-                                    Text(
-                                        text = "${uiState.filteredTransactions.size}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
+                        Text(
+                            text = AppStrings.transactionHistory(lang),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "${uiState.filteredTransactions.size} ${if (lang == AppLanguage.SW) "miamala" else "items"}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Filters: All, Expenses, Income
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    LazyRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        FilterChip(
-                            selected = uiState.selectedFilter == FilterType.ALL,
-                            onClick = { viewModel.setFilter(FilterType.ALL) },
-                            label = { Text("All (${uiState.transactions.size})") },
-                            modifier = Modifier.testTag("filter_all_chip")
-                        )
-                        FilterChip(
-                            selected = uiState.selectedFilter == FilterType.EXPENSES,
-                            onClick = { viewModel.setFilter(FilterType.EXPENSES) },
-                            label = { Text("Expenses (Matumizi)") },
-                            modifier = Modifier.testTag("filter_expenses_chip")
-                        )
-                        FilterChip(
-                            selected = uiState.selectedFilter == FilterType.INCOME,
-                            onClick = { viewModel.setFilter(FilterType.INCOME) },
-                            label = { Text("Income (Mapato)") },
-                            modifier = Modifier.testTag("filter_income_chip")
-                        )
+                        item {
+                            FilterChip(
+                                selected = uiState.selectedFilter == FilterType.ALL,
+                                onClick = { viewModel.setFilter(FilterType.ALL) },
+                                label = { Text(AppStrings.all(lang)) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                                )
+                            )
+                        }
+                        item {
+                            FilterChip(
+                                selected = uiState.selectedFilter == FilterType.EXPENSES,
+                                onClick = { viewModel.setFilter(FilterType.EXPENSES) },
+                                label = { Text(AppStrings.expenses(lang)) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = if (isEffectiveDark) ExpenseRedDark else ExpenseRedLight,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
+                        item {
+                            FilterChip(
+                                selected = uiState.selectedFilter == FilterType.INCOME,
+                                onClick = { viewModel.setFilter(FilterType.INCOME) },
+                                label = { Text(AppStrings.income(lang)) },
+                                shape = RoundedCornerShape(12.dp),
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = if (isEffectiveDark) IncomeGreenDark else IncomeGreenLight,
+                                    selectedLabelColor = Color.White
+                                )
+                            )
+                        }
                     }
                 }
             }
 
-            // Transaction Items or Empty State
+            // Transactions list or empty state
             if (uiState.filteredTransactions.isEmpty()) {
-                item {
-                    EmptyTransactionsCard(
-                        hasAnyTransactions = uiState.transactions.isNotEmpty(),
-                        filter = uiState.selectedFilter,
+                item(key = "empty_state") {
+                    EmptyTransactionsView(
+                        lang = lang,
                         onAddIncome = {
                             addDialogInitialType = TransactionType.INCOME
                             transactionToEdit = null
@@ -426,48 +406,44 @@ fun DashboardScreen(
                     items = uiState.filteredTransactions,
                     key = { it.id }
                 ) { transaction ->
-                    TransactionListItem(
+                    TransactionItemRow(
                         transaction = transaction,
-                        onClick = { transactionToView = transaction }
+                        lang = lang,
+                        isDark = isEffectiveDark,
+                        onClick = { transactionToView = transaction },
+                        onEdit = {
+                            transactionToEdit = transaction
+                            showAddDialog = true
+                        },
+                        onDelete = { viewModel.deleteTransaction(transaction) }
                     )
                 }
-            }
-
-            // Bottom Spacer for clean scrolling
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
 
-    // Add / Edit Dialog
-    if (showAddDialog || transactionToEdit != null) {
+    // Add / Edit Transaction Dialog
+    if (showAddDialog) {
         AddEditTransactionDialog(
             initialType = addDialogInitialType,
             transactionToEdit = transactionToEdit,
+            lang = lang,
             onDismiss = {
                 showAddDialog = false
                 transactionToEdit = null
             },
             onSave = { type, amount, category, description, dateMillis ->
-                if (transactionToEdit != null) {
-                    viewModel.updateTransaction(
-                        transactionToEdit!!.copy(
-                            type = type,
-                            amount = amount,
-                            category = category,
-                            description = description,
-                            dateMillis = dateMillis
-                        )
-                    )
+                if (transactionToEdit == null) {
+                    viewModel.addTransaction(type, amount, category, description, dateMillis)
                 } else {
-                    viewModel.addTransaction(
+                    val updated = transactionToEdit!!.copy(
                         type = type,
                         amount = amount,
                         category = category,
                         description = description,
                         dateMillis = dateMillis
                     )
+                    viewModel.updateTransaction(updated)
                 }
                 showAddDialog = false
                 transactionToEdit = null
@@ -475,14 +451,15 @@ fun DashboardScreen(
         )
     }
 
-    // View Details Dialog
+    // Transaction Detail Dialog
     transactionToView?.let { tx ->
         TransactionDetailDialog(
             transaction = tx,
             onDismiss = { transactionToView = null },
             onEdit = {
-                transactionToEdit = tx
                 transactionToView = null
+                transactionToEdit = tx
+                showAddDialog = true
             },
             onDelete = {
                 viewModel.deleteTransaction(tx)
@@ -495,46 +472,22 @@ fun DashboardScreen(
     if (showResetConfirmation) {
         AlertDialog(
             onDismissRequest = { showResetConfirmation = false },
-            title = { Text("Reset Tracker to TZS 0?") },
-            text = { Text("This will delete all transaction records and reset your balance back to TZS 0. This cannot be undone.") },
+            title = { Text(AppStrings.resetConfirmTitle(lang)) },
+            text = { Text(AppStrings.resetConfirmSub(lang)) },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         viewModel.clearAllTransactions()
                         showResetConfirmation = false
                     },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
                 ) {
-                    Text("Reset All", fontWeight = FontWeight.Bold)
+                    Text(AppStrings.deleteBtn(lang))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showResetConfirmation = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
-    }
-
-    // About / Info Dialog
-    if (showInfoDialog) {
-        AlertDialog(
-            onDismissRequest = { showInfoDialog = false },
-            title = { Text("TZS Expense Tracker 🇹🇿") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("• Designed for Tanzania with Tanzanian Shillings (TZS).")
-                    Text("• Balances start clean at TZS 0 with zero initial money.")
-                    Text("• Easily record Income (Mapato) and Expenses (Matumizi).")
-                    Text("• Includes categories, descriptions, amounts, and dates.")
-                    Text("• Toggle dark mode anytime using the top bar sun/moon icon for high-contrast visibility.")
-                }
-            },
-            confirmButton = {
-                TextButton(onClick = { showInfoDialog = false }) {
-                    Text("Got It")
+                    Text(AppStrings.cancelBtn(lang))
                 }
             }
         )
@@ -542,207 +495,278 @@ fun DashboardScreen(
 }
 
 @Composable
-fun BalanceOverviewCard(
+fun TanzaniaBalanceCard(
     balance: Double,
     income: Double,
     expense: Double,
-    isDark: Boolean
+    lang: AppLanguage,
+    isDark: Boolean,
+    onAddIncome: () -> Unit,
+    onAddExpense: () -> Unit
 ) {
+    // Beautiful gradient inspired by Tanzanian modern financial aesthetic
+    val gradient = if (isDark) {
+        Brush.linearGradient(
+            colors = listOf(
+                Color(0xFF0F3822),
+                Color(0xFF062113),
+                Color(0xFF132B1C)
+            )
+        )
+    } else {
+        Brush.linearGradient(
+            colors = listOf(
+                Color(0xFF007A3D),
+                Color(0xFF005C2E),
+                Color(0xFF004422)
+            )
+        )
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .testTag("balance_overview_card"),
-        shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isDark) MaterialTheme.colorScheme.surfaceVariant
-            else MaterialTheme.colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+            .clip(RoundedCornerShape(24.dp)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
-        Column(
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
+                .background(gradient)
                 .padding(20.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Current Balance (Salio)",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontWeight = FontWeight.Medium
-                )
-
-                // Status chip
-                val statusText = when {
-                    balance > 0 -> "Surplus / Faida"
-                    balance < 0 -> "Deficit / Upungufu"
-                    else -> "TZS 0 Clean Start"
-                }
-                Surface(
-                    shape = RoundedCornerShape(20.dp),
-                    color = when {
-                        balance > 0 -> MaterialTheme.colorScheme.primaryContainer
-                        balance < 0 -> MaterialTheme.colorScheme.errorContainer
-                        else -> MaterialTheme.colorScheme.surfaceVariant
-                    }
+            Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = statusText,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = when {
-                            balance > 0 -> MaterialTheme.colorScheme.onPrimaryContainer
-                            balance < 0 -> MaterialTheme.colorScheme.onErrorContainer
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        text = AppStrings.currentBalance(lang),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = Color.White.copy(alpha = 0.85f)
                     )
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.White.copy(alpha = 0.2f)
+                    ) {
+                        Text(
+                            text = "TZS",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Big Clean Balance
+                Text(
+                    text = Formatters.formatCurrency(balance),
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = Color.White
+                )
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Income & Expense Sub Cards
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Income Box
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White.copy(alpha = 0.15f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFF22C55E),
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.TrendingUp,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.padding(6.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = AppStrings.income(lang),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                                Text(
+                                    text = Formatters.formatCurrency(income),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+
+                    // Expense Box
+                    Surface(
+                        modifier = Modifier.weight(1f),
+                        shape = RoundedCornerShape(16.dp),
+                        color = Color.White.copy(alpha = 0.15f)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFFEF4444),
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.TrendingDown,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.padding(6.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column {
+                                Text(
+                                    text = AppStrings.expenses(lang),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                                Text(
+                                    text = Formatters.formatCurrency(expense),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                // Action Buttons (+ Income / - Expense)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Button(
+                        onClick = onAddIncome,
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("hero_add_income_button"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF22C55E),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = AppStrings.addIncome(lang),
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
+
+                    Button(
+                        onClick = onAddExpense,
+                        modifier = Modifier
+                            .weight(1f)
+                            .testTag("hero_add_expense_button"),
+                        shape = RoundedCornerShape(14.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFEF4444),
+                            contentColor = Color.White
+                        )
+                    ) {
+                        Icon(Icons.Default.Remove, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = AppStrings.addExpense(lang),
+                            fontWeight = FontWeight.Bold,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
                 }
             }
+        }
+    }
+}
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Main Balance Display
+@Composable
+fun TopExpenseCategoriesCard(
+    categoryExpenses: Map<String, Double>,
+    totalExpense: Double,
+    lang: AppLanguage
+) {
+    Card(
+        shape = RoundedCornerShape(18.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = Formatters.formatTzs(balance),
-                style = MaterialTheme.typography.headlineLarge,
-                fontWeight = FontWeight.ExtraBold,
-                color = when {
-                    balance > 0 -> MaterialTheme.colorScheme.primary
-                    balance < 0 -> MaterialTheme.colorScheme.error
-                    else -> MaterialTheme.colorScheme.onSurface
-                }
+                text = if (lang == AppLanguage.SW) "Matumizi Makuu kwa Makundi" else "Top Expense Breakdown",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface
             )
 
-            Spacer(modifier = Modifier.height(18.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            // Financial Summary Split: Income vs Outcome/Expenses
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                // Total Income Sub-card
-                Surface(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowUpward,
-                                contentDescription = "Income",
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = "Total Income",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = Formatters.formatTzs(income, includeSign = true, isIncome = true),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
+            val sortedCategories = categoryExpenses.toList()
+                .sortedByDescending { it.second }
+                .take(3)
 
-                // Total Expense Sub-card
-                Surface(
-                    modifier = Modifier.weight(1f),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.45f)
-                ) {
-                    Row(
-                        modifier = Modifier.padding(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.errorContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ArrowDownward,
-                                contentDescription = "Expense",
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(10.dp))
-                        Column {
-                            Text(
-                                text = "Total Expenses",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = Formatters.formatTzs(expense, includeSign = true, isIncome = false),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.error,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                }
-            }
+            for ((category, amount) in sortedCategories) {
+                val ratio = if (totalExpense > 0) (amount / totalExpense).toFloat() else 0f
+                val percentage = (ratio * 100).toInt()
 
-            // Ratio progress bar if income > 0
-            if (income > 0) {
-                val ratio = (expense / income).toFloat().coerceIn(0f, 1f)
-                val percent = (expense / income * 100).toInt()
-                Spacer(modifier = Modifier.height(14.dp))
-                Column {
+                Column(modifier = Modifier.padding(vertical = 4.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         Text(
-                            text = "Expenses spent from Income",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = category,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Medium
                         )
                         Text(
-                            text = "$percent%",
-                            style = MaterialTheme.typography.labelSmall,
+                            text = "${Formatters.formatCurrency(amount)} ($percentage%)",
+                            style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.Bold,
-                            color = if (percent > 90) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
+                            color = MaterialTheme.colorScheme.error
                         )
                     }
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
                     LinearProgressIndicator(
-                        progress = { ratio },
+                        progress = { ratio.coerceIn(0f, 1f) },
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(6.dp)
-                            .clip(CircleShape),
-                        color = if (percent > 90) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                            .clip(RoundedCornerShape(3.dp)),
+                        color = Color(0xFFEF4444),
+                        trackColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                     )
                 }
             }
@@ -751,256 +775,156 @@ fun BalanceOverviewCard(
 }
 
 @Composable
-fun CategoryBreakdownSection(
-    categoryExpenses: Map<String, Double>,
-    totalExpense: Double
-) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = "Top Expense Categories",
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface
-        )
-        Spacer(modifier = Modifier.height(8.dp))
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            items(categoryExpenses.toList().sortedByDescending { it.second }) { (category, amount) ->
-                val percentage = if (totalExpense > 0) ((amount / totalExpense) * 100).toInt() else 0
-                val icon = Categories.getIconForCategory(category, TransactionType.EXPENSE)
-                Surface(
-                    shape = RoundedCornerShape(14.dp),
-                    color = MaterialTheme.colorScheme.surface,
-                    border = androidx.compose.foundation.BorderStroke(
-                        width = 1.dp,
-                        color = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
-                    )
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(28.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = icon,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Column {
-                            Text(
-                                text = category.substringBefore(" ("),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1
-                            )
-                            Text(
-                                text = "${Formatters.formatTzs(amount)} ($percentage%)",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun TransactionListItem(
+fun TransactionItemRow(
     transaction: TransactionEntity,
-    onClick: () -> Unit
+    lang: AppLanguage,
+    isDark: Boolean,
+    onClick: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
 ) {
     val isIncome = transaction.type == TransactionType.INCOME
+    val amountColor = if (isIncome) {
+        if (isDark) IncomeGreenDark else IncomeGreenLight
+    } else {
+        if (isDark) ExpenseRedDark else ExpenseRedLight
+    }
+
     val icon = Categories.getIconForCategory(transaction.category, transaction.type)
 
-    Surface(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick)
+            .clickable { onClick() }
             .testTag("transaction_item_${transaction.id}"),
         shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp,
-        border = androidx.compose.foundation.BorderStroke(
-            width = 1.dp,
-            color = MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)
-        )
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
+                .padding(14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Category Icon Badge
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (isIncome) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.errorContainer
-                    ),
-                contentAlignment = Alignment.Center
+            // Category Icon
+            Surface(
+                shape = CircleShape,
+                color = amountColor.copy(alpha = 0.15f),
+                modifier = Modifier.size(46.dp)
             ) {
                 Icon(
                     imageVector = icon,
                     contentDescription = transaction.category,
-                    tint = if (isIncome) MaterialTheme.colorScheme.onPrimaryContainer
-                    else MaterialTheme.colorScheme.onErrorContainer,
-                    modifier = Modifier.size(22.dp)
+                    tint = amountColor,
+                    modifier = Modifier.padding(10.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.width(14.dp))
+            Spacer(modifier = Modifier.width(12.dp))
 
-            // Description & Category/Date Info
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
+            // Transaction Details
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (transaction.description.isNotBlank()) transaction.description else transaction.category,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    text = transaction.category,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(3.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                if (transaction.description.isNotBlank()) {
                     Text(
-                        text = transaction.category.substringBefore(" ("),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Medium,
-                        maxLines = 1
-                    )
-                    Text(
-                        text = " • ",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = Formatters.formatDate(transaction.dateMillis),
-                        style = MaterialTheme.typography.labelSmall,
+                        text = transaction.description,
+                        style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
-            }
-
-            Spacer(modifier = Modifier.width(10.dp))
-
-            // Formatted Amount
-            Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = Formatters.formatTzs(transaction.amount, includeSign = true, isIncome = isIncome),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isIncome) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.error
-                )
-                Text(
-                    text = if (isIncome) "Income" else "Expense",
+                    text = Formatters.formatDate(transaction.dateMillis),
                     style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Amount
+            Text(
+                text = (if (isIncome) "+ " else "- ") + Formatters.formatCurrency(transaction.amount),
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.ExtraBold,
+                color = amountColor
+            )
         }
     }
 }
 
 @Composable
-fun EmptyTransactionsCard(
-    hasAnyTransactions: Boolean,
-    filter: FilterType,
+fun EmptyTransactionsView(
+    lang: AppLanguage,
     onAddIncome: () -> Unit,
     onAddExpense: () -> Unit
 ) {
-    Card(
+    Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 12.dp)
-            .testTag("empty_transactions_view"),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
+            .padding(vertical = 40.dp),
+        contentAlignment = Alignment.Center
     ) {
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(28.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(horizontal = 24.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
-                contentAlignment = Alignment.Center
+            Surface(
+                shape = CircleShape,
+                color = Color(0xFF007A3D).copy(alpha = 0.12f),
+                modifier = Modifier.size(76.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.ReceiptLong,
+                    imageVector = Icons.Default.Wallet,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(32.dp)
+                    tint = Color(0xFF007A3D),
+                    modifier = Modifier.padding(18.dp)
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
-                text = if (hasAnyTransactions) "No matching transactions" else "No transactions yet",
+                text = AppStrings.noTransactions(lang),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = if (hasAnyTransactions) {
-                    "Try adjusting your filter or search query."
-                } else {
-                    "Your balance starts cleanly at TZS 0 with no initial money. Add your first income or expense to begin tracking!"
-                },
+                text = AppStrings.noTransactionsSub(lang),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
             )
 
-            if (!hasAnyTransactions) {
-                Spacer(modifier = Modifier.height(18.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Button(
-                        onClick = onAddIncome,
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("+ Add Income")
-                    }
-                    Button(
-                        onClick = onAddExpense,
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error
-                        ),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("− Add Expense")
-                    }
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(
+                    onClick = onAddIncome,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF22C55E))
+                ) {
+                    Text(AppStrings.addIncome(lang), fontWeight = FontWeight.Bold)
+                }
+
+                Button(
+                    onClick = onAddExpense,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444))
+                ) {
+                    Text(AppStrings.addExpense(lang), fontWeight = FontWeight.Bold)
                 }
             }
         }
