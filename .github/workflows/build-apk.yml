@@ -167,7 +167,8 @@ jobs:
 
           echo "Creating GitHub Release with tag: $RELEASE_TAG"
 
-          RELEASE_NOTES="### Automated Debug APK Build
+          cat << 'EOF' > release_notes.md
+### Automated Debug APK Build
 
 - **Build Source:** GitHub Actions workflow
 - **Run Number:** #${{ github.run_number }}
@@ -175,13 +176,14 @@ jobs:
 - **Source Commit SHA:** ${{ github.sha }}
 - **Intended Use:** Testing and development verification
 - **Production Status:** Not a Play Store production release
-- **Signing:** Signed only with a temporary debug keystore."
+- **Signing:** Signed only with a temporary debug keystore.
+EOF
 
           gh release create "$RELEASE_TAG" "$ASSET_PATH" \
             --title "$RELEASE_TITLE" \
             --target "${{ github.sha }}" \
             --latest \
-            --notes "$RELEASE_NOTES"
+            --notes-file release_notes.md
 
       - name: Report APK download result
         if: always()
