@@ -1,0 +1,7 @@
+{
+  "name": "TZS Expense Tracker",
+  "description": "A clean Tanzanian Shillings (TZS) expense and income tracker with financial dashboard, transaction history, and dark mode.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
