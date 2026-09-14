@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "TZS Expense Tracker"
+rootProject.name = "Jifunze Kichina"
 
 include(":app")
