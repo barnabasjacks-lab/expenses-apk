@@ -4,21 +4,26 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
-import com.example.chinese.ui.ChineseAppScreen
-import com.example.chinese.ui.ChineseViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.dukaplus.ui.DukaPlusMainScreen
+import com.example.dukaplus.viewmodel.DukaPlusViewModel
 import com.example.ui.theme.MyApplicationTheme
+import com.example.ui.theme.ThemeMode
 
 class MainActivity : ComponentActivity() {
-    private val viewModel: ChineseViewModel by viewModels()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MyApplicationTheme {
-                ChineseAppScreen(viewModel = viewModel)
+            val dukaViewModel: DukaPlusViewModel = viewModel()
+            val isDarkMode by dukaViewModel.isDarkMode.collectAsState()
+
+            MyApplicationTheme(themeMode = if (isDarkMode) ThemeMode.DARK else ThemeMode.LIGHT) {
+                DukaPlusMainScreen(viewModel = dukaViewModel)
             }
         }
     }
 }
+

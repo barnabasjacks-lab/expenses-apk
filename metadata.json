@@ -1,6 +1,6 @@
 {
-  "name": "Jifunze Kichina",
-  "description": "Jifunze Kichina kwa Kiswahili na Kiingereza kikiwa na sauti. Imetengenezwa na Barnabas Msuku.",
+  "name": "DukaPlus",
+  "description": "Mfumo wa kisasa wa Mauzo na Usimamizi wa Stoo (POS & Inventory) kwa maduka na biashara za Tanzania, unaofanya kazi bila intaneti.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Jifunze Kichina"
+rootProject.name = "DukaPlus"
 
 include(":app")

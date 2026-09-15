@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Dar es Salaam Runner 3D - Realistic Edition</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #090d16;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        #canvas3d {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 14px;
+            display: flex;
+            justify-content: space-between;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .stat-card {
+            background: rgba(15, 23, 42, 0.88);
+            border: 1.5px solid rgba(255, 255, 255, 0.18);
+            border-radius: 14px;
+            padding: 8px 16px;
+            backdrop-filter: blur(12px);
+            color: white;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+        .stat-label {
+            font-size: 11px;
+            font-weight: 800;
+            color: #94a3b8;
+            letter-spacing: 0.8px;
+        }
+        .stat-value {
+            font-size: 20px;
+            font-weight: 900;
+            color: #f8fafc;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .stat-coins .stat-value { color: #fbbf24; }
+        .stat-record .stat-value { color: #34d399; }
+
+        #credit-badge {
+            position: absolute;
+            top: 76px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #991b1b, #dc2626);
+            color: #fef08a;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 5px 16px;
+            border-radius: 20px;
+            pointer-events: none;
+            z-index: 10;
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+            letter-spacing: 0.5px;
+            border: 1px solid rgba(254, 240, 138, 0.4);
+        }
+
+        #speed-gauge {
+            position: absolute;
+            top: 110px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.65);
+            padding: 3px 12px;
+            border-radius: 12px;
+            color: #38bdf8;
+            font-size: 11px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        #touch-controls {
+            position: absolute;
+            bottom: 22px;
+            left: 0;
+            width: 100%;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 15;
+        }
+        .ctrl-btn {
+            width: 62px;
+            height: 62px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            background: rgba(30, 41, 59, 0.75);
+            color: white;
+            font-size: 26px;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            touch-action: manipulation;
+        }
+        .ctrl-btn:active {
+            transform: scale(0.90);
+            background: rgba(255, 255, 255, 0.4);
+        }
+        .btn-jump {
+            background: linear-gradient(135deg, #059669, #10b981);
+            border-color: #34d399;
+        }
+        .btn-slide {
+            background: linear-gradient(135deg, #d97706, #f59e0b);
+            border-color: #fbbf24;
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(10, 15, 29, 0.85);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 25;
+            backdrop-filter: blur(6px);
+        }
+        .modal {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border-radius: 28px;
+            padding: 26px;
+            width: 88%;
+            max-width: 380px;
+            text-align: center;
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.8);
+        }
+        .modal-icon { font-size: 52px; margin-bottom: 6px; }
+        .modal-title {
+            font-size: 24px;
+            font-weight: 900;
+            color: #facc15;
+            margin-bottom: 4px;
+            letter-spacing: -0.5px;
+        }
+        .modal-sub {
+            font-size: 14px;
+            color: #94a3b8;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+        .results-box {
+            background: rgba(2, 6, 23, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 18px;
+            text-align: left;
+        }
+        .result-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-weight: 800;
+            font-size: 15px;
+        }
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            border-radius: 16px;
+            border: none;
+            font-size: 17px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #059669, #10b981);
+            color: white;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.45);
+            cursor: pointer;
+            letter-spacing: 0.5px;
+        }
+        .btn-action:active { transform: scale(0.96); }
+    </style>
+    <!-- Three.js 3D Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+
+    <div id="hud">
+        <div class="stat-card">
+            <div class="stat-label">UMBALI</div>
+            <div class="stat-value" id="val-distance">0m</div>
+        </div>
+        <div class="stat-card stat-coins">
+            <div class="stat-label">COINS</div>
+            <div class="stat-value" id="val-coins">0 🪙</div>
+        </div>
+        <div class="stat-card stat-record">
+            <div class="stat-label">REKODI</div>
+            <div class="stat-value" id="val-record">0m 🏆</div>
+        </div>
+    </div>
+
+    <div id="credit-badge">Barnabas Msuku • Realistic 3D 🇹🇿</div>
+    <div id="speed-gauge">SPEED: 40 KM/H</div>
+
+    <div id="touch-controls">
+        <div style="display: flex; gap: 14px;">
+            <button class="ctrl-btn" id="btn-left" aria-label="Kushoto">⬅️</button>
+            <button class="ctrl-btn" id="btn-right" aria-label="Kulia">➡️</button>
+        </div>
+        <div style="display: flex; gap: 14px;">
+            <button class="ctrl-btn btn-slide" id="btn-slide" aria-label="Kuteleza Chini">⬇️</button>
+            <button class="ctrl-btn btn-jump" id="btn-jump" aria-label="Kuruka Juu">⬆️</button>
+        </div>
+    </div>
+
+    <!-- Start / Game Over Modal -->
+    <div id="overlay">
+        <div class="modal" id="modal-content">
+            <div class="modal-icon" id="modal-icon">🏃‍♂️</div>
+            <div class="modal-title" id="modal-title">Kukimbia Barabarani 3D</div>
+            <div class="modal-sub" id="modal-sub">Dar es Salaam Ultra-Realistic Runner</div>
+
+            <div class="results-box" id="results-box" style="display: none;">
+                <div class="result-row">
+                    <span style="color: #94a3b8;">UMBALI:</span>
+                    <span id="res-dist" style="color: white;">0m</span>
+                </div>
+                <div class="result-row">
+                    <span style="color: #fbbf24;">COINS:</span>
+                    <span id="res-coins" style="color: #fbbf24;">0 🪙</span>
+                </div>
+                <div class="result-row">
+                    <span style="color: #34d399;">REKODI:</span>
+                    <span id="res-record" style="color: #34d399;">0m 🏆</span>
+                </div>
+            </div>
+
+            <div style="background: rgba(51, 65, 85, 0.4); padding: 10px; border-radius: 12px; margin-bottom: 14px; text-align: left; font-size: 12px; color: #cbd5e1;">
+                🚦 <b>Mazingira Halisi ya Dar:</b><br>
+                • <b>Daladala za Posta/Mbagala</b> zenye vioo na honi 🚌<br>
+                • <b>Bodaboda za Boxer</b> zenye spidi kali 🏍️<br>
+                • <b>Vibanda vya M-Pesa & Tigo Pesa</b> pembezoni 🏪<br>
+                • <b>Mashimo ya Lami</b> na vizuizi vya polisi 🚧
+            </div>
+
+            <div style="font-size: 11px; color: #94a3b8; margin-bottom: 14px;">
+                Mchezo Umetengenezwa na <b>Barnabas Msuku</b> 🇹🇿
+            </div>
+
+            <button class="btn-action" id="btn-start">ANZA MCHEZO WA 3D</button>
+        </div>
+    </div>
+
+    <canvas id="canvas3d"></canvas>
+
+    <script>
+        // --- REALISTIC AUDIO SYNTHESIZER (Web Audio API) ---
+        class GameSoundEngine {
+            constructor() {
+                this.ctx = null;
+            }
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+            playCoinSound() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(987.77, this.ctx.currentTime); // B5 note
+                osc.frequency.exponentialRampToValueAtTime(1318.51, this.ctx.currentTime + 0.12); // E6 note
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.2);
+            }
+            playHornSound() {
+                if (!this.ctx) return;
+                const osc1 = this.ctx.createOscillator();
+                const osc2 = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc1.type = 'sawtooth';
+                osc2.type = 'sawtooth';
+                osc1.frequency.setValueAtTime(370, this.ctx.currentTime);
+                osc2.frequency.setValueAtTime(440, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.35);
+                osc1.connect(gain);
+                osc2.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc1.start();
+                osc2.start();
+                osc1.stop(this.ctx.currentTime + 0.35);
+                osc2.stop(this.ctx.currentTime + 0.35);
+            }
+            playJumpSound() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(200, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(520, this.ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.2);
+            }
+            playCrashSound() {
+                if (!this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, this.ctx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.45);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.45);
+            }
+        }
+        const soundEngine = new GameSoundEngine();
+
+        // --- PROCEDURAL PHOTOREALISTIC TEXTURE GENERATORS ---
+        function createAsphaltTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 512;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#262930';
+            ctx.fillRect(0, 0, 512, 512);
+
+            // Grain & tar imperfections
+            for (let i = 0; i < 30000; i++) {
+                const x = Math.random() * 512;
+                const y = Math.random() * 512;
+                const shade = Math.floor(Math.random() * 45) + 25;
+                ctx.fillStyle = `rgb(${shade},${shade},${shade})`;
+                ctx.fillRect(x, y, 1.5, 1.5);
+            }
+            // Oil slick / wear marks
+            for (let j = 0; j < 12; j++) {
+                ctx.fillStyle = 'rgba(10, 12, 16, 0.4)';
+                ctx.beginPath();
+                ctx.ellipse(Math.random() * 512, Math.random() * 512, 40, 12, Math.random(), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.wrapS = THREE.RepeatWrapping;
+            texture.wrapT = THREE.RepeatWrapping;
+            texture.repeat.set(1, 15);
+            return texture;
+        }
+
+        // Texture ya bodi ya Daladala (Toyota HiAce / Coaster) yenye nembo ya "POSTA - MBAGALA" na Usajili "T 342 DXY"
+        function createDaladalaSideTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            // Bodi nyeupe ya gari
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(0, 0, 512, 256);
+
+            // Mlia wa Blue wa Dar es Salaam katikati
+            ctx.fillStyle = '#1d4ed8';
+            ctx.fillRect(0, 120, 512, 45);
+
+            // Mlia mwembamba wa njano chini ya blue
+            ctx.fillStyle = '#eab308';
+            ctx.fillRect(0, 165, 512, 8);
+
+            // Maandishi halisi ya ruti ya Dar
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 22px Arial';
+            ctx.fillText('POSTA  •  MBAGALA KIKWETE', 70, 152);
+
+            // Madirisha meusi yenye uakisi
+            ctx.fillStyle = '#0f172a';
+            for (let i = 0; i < 4; i++) {
+                ctx.fillRect(50 + i * 110, 30, 90, 70);
+                // Glass glare
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+                ctx.beginPath();
+                ctx.moveTo(50 + i * 110, 30);
+                ctx.lineTo(80 + i * 110, 30);
+                ctx.lineTo(60 + i * 110, 100);
+                ctx.lineTo(50 + i * 110, 100);
+                ctx.fill();
+                ctx.fillStyle = '#0f172a';
+            }
+
+            // Namba ya Usajili (Plate number)
+            ctx.fillStyle = '#e2e8f0';
+            ctx.fillRect(360, 200, 120, 32);
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(360, 200, 120, 32);
+            ctx.fillStyle = '#000000';
+            ctx.font = 'bold 16px monospace';
+            ctx.fillText('T 342 DXY', 375, 222);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            return texture;
+        }
+
+        // Texture ya Kibanda cha M-PESA & TIGO PESA pembeni mwa barabara
+        function createShopTexture(type) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+
+            if (type === 'MPESA') {
+                ctx.fillStyle = '#dc2626'; // Vodacom Red
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 28px Arial';
+                ctx.fillText('M-PESA', 60, 60);
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText('WAKALA HAPA', 65, 90);
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(40, 120, 176, 136); // Dirisha la duka
+            } else {
+                ctx.fillStyle = '#2563eb'; // Tigo Blue
+                ctx.fillRect(0, 0, 256, 256);
+                ctx.fillStyle = '#facc15';
+                ctx.font = 'bold 26px Arial';
+                ctx.fillText('TIGO PESA', 50, 60);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 14px Arial';
+                ctx.fillText('HUDUMA ZA FEDHA', 55, 90);
+                ctx.fillStyle = '#1e293b';
+                ctx.fillRect(40, 120, 176, 136);
+            }
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- GAME ENGINE VARIABLES ---
+        let scene, camera, renderer;
+        let playerGroup, playerTorso, playerHead, playerLimbs = [];
+        let roadMesh, roadMaterial;
+        let obstacles = [], coins = [], sceneryObjects = [];
+
+        const LANES = [-2.8, 0, 2.8]; // Left, Center, Right 3D coordinates
+        let currentLaneIdx = 1;
+        let targetLaneX = 0;
+        let isJumping = false;
+        let isSliding = false;
+        let jumpVelocity = 0;
+
+        let isPlaying = false;
+        let distance = 0;
+        let coinsCount = 0;
+        let record = 0;
+        let gameSpeed = 0.58;
+        let lastObstacleZ = 0;
+        let lastCoinZ = 0;
+
+        // Load Record
+        try {
+            const saved = localStorage.getItem("dar_runner_record");
+            if (saved) record = parseInt(saved, 10);
+            document.getElementById("val-record").innerText = record + "m 🏆";
+        } catch(e) {}
+
+        // Initialize 3D Engine
+        function init3D() {
+            const canvas = document.getElementById("canvas3d");
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, powerPreference: "high-performance" });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.1;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x0a101f);
+            scene.fog = new THREE.FogExp2(0x0a101f, 0.014);
+
+            // Third-Person Follow Camera
+            camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 250);
+            camera.position.set(0, 4.0, 5.2);
+            camera.lookAt(0, 1.8, -12);
+
+            // PBR Sun & Skylight (Tropical Dar es Salaam Golden Hour)
+            const ambientLight = new THREE.AmbientLight(0xfff1e6, 0.85);
+            scene.add(ambientLight);
+
+            const sunLight = new THREE.DirectionalLight(0xfef3c7, 1.6);
+            sunLight.position.set(20, 35, 25);
+            sunLight.castShadow = true;
+            sunLight.shadow.mapSize.width = 1024;
+            sunLight.shadow.mapSize.height = 1024;
+            sunLight.shadow.camera.near = 0.5;
+            sunLight.shadow.camera.far = 120;
+            sunLight.shadow.camera.left = -15;
+            sunLight.shadow.camera.right = 15;
+            sunLight.shadow.camera.top = 20;
+            sunLight.shadow.camera.bottom = -10;
+            scene.add(sunLight);
+
+            // Blue fill light for realistic sky ambiance
+            const hemiLight = new THREE.HemisphereLight(0x60a5fa, 0x1e293b, 0.6);
+            scene.add(hemiLight);
+
+            // Sky Backdrop (Kigamboni & Dar Skyline Sunset)
+            const textureLoader = new THREE.TextureLoader();
+            textureLoader.load('sky_dar.jpg', function(tex) {
+                const skyGeo = new THREE.PlaneGeometry(160, 60);
+                const skyMat = new THREE.MeshBasicMaterial({ map: tex, fog: false });
+                const skyMesh = new THREE.Mesh(skyGeo, skyMat);
+                skyMesh.position.set(0, 22, -95);
+                scene.add(skyMesh);
+            });
+
+            createRealisticEnvironment();
+            createRealisticPlayer();
+
+            window.addEventListener('resize', onWindowResize);
+            setupInput();
+        }
+
+        // --- REALISTIC ENVIRONMENT BUILDER ---
+        function createRealisticEnvironment() {
+            // 1. Asphalt Road with Realistic Texture & Specular Highlights
+            const asphaltTexture = createAsphaltTexture();
+            const roadGeo = new THREE.PlaneGeometry(10.2, 280);
+            roadMaterial = new THREE.MeshStandardMaterial({
+                map: asphaltTexture,
+                roughness: 0.75,
+                metalness: 0.15
+            });
+            roadMesh = new THREE.Mesh(roadGeo, roadMaterial);
+            roadMesh.rotation.x = -Math.PI / 2;
+            roadMesh.position.z = -75;
+            roadMesh.receiveShadow = true;
+            scene.add(roadMesh);
+
+            // Curbs (Mitaro ya maji na kingo za barabara)
+            const curbGeo = new THREE.BoxGeometry(0.5, 0.4, 280);
+            const curbMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.9 });
+            const leftCurb = new THREE.Mesh(curbGeo, curbMat);
+            leftCurb.position.set(-5.35, 0.1, -75);
+            scene.add(leftCurb);
+
+            const rightCurb = new THREE.Mesh(curbGeo, curbMat);
+            rightCurb.position.set(5.35, 0.1, -75);
+            scene.add(rightCurb);
+
+            // Pavement / Grasslands beyond road
+            const groundGeo = new THREE.PlaneGeometry(90, 280);
+            const groundMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.95 });
+            const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+            groundMesh.rotation.x = -Math.PI / 2;
+            groundMesh.position.set(0, -0.05, -75);
+            scene.add(groundMesh);
+
+            // Lane Divider Marks (Milia ya njano na nyeupe ya lami ya Dar)
+            for (let i = 0; i < 45; i++) {
+                const dashGeo = new THREE.PlaneGeometry(0.18, 2.6);
+                const dashMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+
+                const dashL = new THREE.Mesh(dashGeo, dashMat);
+                dashL.rotation.x = -Math.PI / 2;
+                dashL.position.set(-1.4, 0.02, -i * 6);
+                scene.add(dashL);
+
+                const dashR = new THREE.Mesh(dashGeo, dashMat);
+                dashR.rotation.x = -Math.PI / 2;
+                dashR.position.set(1.4, 0.02, -i * 6);
+                scene.add(dashR);
+            }
+
+            // Maduka ya M-Pesa na Tigo Pesa, Nguzo za TANESCO & Mitende kando ya barabara
+            const mpesaTex = createShopTexture('MPESA');
+            const tigoTex = createShopTexture('TIGO');
+
+            for (let z = 0; z > -200; z -= 18) {
+                // Vibanda vya fedha
+                if (Math.abs(z) % 36 === 0) {
+                    createKiosk(-7.8, z, mpesaTex);
+                } else if (Math.abs(z) % 36 === 18) {
+                    createKiosk(7.8, z, tigoTex);
+                }
+
+                // Nguzo za umeme za mbao (TANESCO poles zenye nyaya)
+                createTanescoPole(-6.8, z);
+                createTanescoPole(6.8, z + 9);
+
+                // Mitende ya Pwani
+                createPalmTree(-10.5, z + 6);
+                createPalmTree(10.5, z + 12);
+            }
+        }
+
+        function createKiosk(x, z, tex) {
+            const kiosk = new THREE.Group();
+            const boxGeo = new THREE.BoxGeometry(3.2, 3.0, 3.2);
+            const boxMat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.6 });
+            const mesh = new THREE.Mesh(boxGeo, boxMat);
+            mesh.position.y = 1.5;
+            mesh.castShadow = true;
+            kiosk.add(mesh);
+
+            // Paa la bati (Corrugated iron roof)
+            const roofGeo = new THREE.ConeGeometry(2.8, 1.0, 4);
+            const roofMat = new THREE.MeshStandardMaterial({ color: 0x64748b, roughness: 0.5 });
+            const roof = new THREE.Mesh(roofGeo, roofMat);
+            roof.rotation.y = Math.PI / 4;
+            roof.position.y = 3.5;
+            kiosk.add(roof);
+
+            kiosk.position.set(x, 0, z);
+            scene.add(kiosk);
+            sceneryObjects.push(kiosk);
+        }
+
+        function createTanescoPole(x, z) {
+            const pole = new THREE.Group();
+            // Shina la nguzo ya umeme
+            const woodGeo = new THREE.CylinderGeometry(0.12, 0.16, 7.5, 8);
+            const woodMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9 });
+            const trunk = new THREE.Mesh(woodGeo, woodMat);
+            trunk.position.y = 3.75;
+            trunk.castShadow = true;
+            pole.add(trunk);
+
+            // Msalaba wa nguzo juu
+            const crossGeo = new THREE.BoxGeometry(1.6, 0.15, 0.15);
+            const cross = new THREE.Mesh(crossGeo, woodMat);
+            cross.position.y = 7.0;
+            pole.add(cross);
+
+            // Taa ya barabarani (Streetlight bulb)
+            const lampGeo = new THREE.SphereGeometry(0.2, 8, 8);
+            const lampMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+            const lamp = new THREE.Mesh(lampGeo, lampMat);
+            lamp.position.set(0, 6.8, 0);
+            pole.add(lamp);
+
+            pole.position.set(x, 0, z);
+            scene.add(pole);
+            sceneryObjects.push(pole);
+        }
+
+        function createPalmTree(x, z) {
+            const tree = new THREE.Group();
+            const trunkGeo = new THREE.CylinderGeometry(0.2, 0.4, 7, 8);
+            const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+            const trunk = new THREE.Mesh(trunkGeo, trunkMat);
+            trunk.position.y = 3.5;
+            trunk.castShadow = true;
+            tree.add(trunk);
+
+            // Matawi ya nazi ya kijani (Palm canopy)
+            const topGeo = new THREE.ConeGeometry(2.6, 1.4, 7);
+            const topMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.8 });
+            const top = new THREE.Mesh(topGeo, topMat);
+            top.position.y = 7.2;
+            top.castShadow = true;
+            tree.add(top);
+
+            tree.position.set(x, 0, z);
+            scene.add(tree);
+            sceneryObjects.push(tree);
+        }
+
+        // --- REALISTIC 3D PLAYER WITH SKELETAL MOVEMENT ---
+        function createRealisticPlayer() {
+            playerGroup = new THREE.Group();
+
+            // Pelvis & Torso (African boy with sporty blue Tanzanian jersey)
+            const torsoGeo = new THREE.BoxGeometry(0.72, 0.88, 0.44);
+            const jerseyTexture = createJerseyTexture();
+            const torsoMat = new THREE.MeshStandardMaterial({ map: jerseyTexture, roughness: 0.6 });
+            playerTorso = new THREE.Mesh(torsoGeo, torsoMat);
+            playerTorso.position.y = 1.15;
+            playerTorso.castShadow = true;
+            playerGroup.add(playerTorso);
+
+            // Head & Neck
+            const headGeo = new THREE.SphereGeometry(0.24, 16, 16);
+            const skinMat = new THREE.MeshStandardMaterial({ color: 0x6b3b19, roughness: 0.7 });
+            playerHead = new THREE.Mesh(headGeo, skinMat);
+            playerHead.position.y = 1.82;
+            playerHead.castShadow = true;
+            playerGroup.add(playerHead);
+
+            // Hair (Stylized short fade)
+            const hairGeo = new THREE.SphereGeometry(0.245, 12, 12);
+            const hairMat = new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.9 });
+            const hair = new THREE.Mesh(hairGeo, hairMat);
+            hair.position.set(0, 1.86, -0.03);
+            playerGroup.add(hair);
+
+            // Miguu yenye viungo (Upper & lower legs)
+            const legMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.8 }); // Navy shorts
+            const shoeMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.4 }); // Red sneakers
+
+            function createLeg(xOffset) {
+                const legGroup = new THREE.Group();
+                // Paja (Upper leg)
+                const thighGeo = new THREE.CylinderGeometry(0.12, 0.10, 0.46, 8);
+                const thigh = new THREE.Mesh(thighGeo, legMat);
+                thigh.position.y = -0.23;
+                thigh.castShadow = true;
+                legGroup.add(thigh);
+
+                // Muundi (Shin & foot)
+                const shinGeo = new THREE.CylinderGeometry(0.09, 0.08, 0.46, 8);
+                const shin = new THREE.Mesh(shinGeo, skinMat);
+                shin.position.y = -0.65;
+                shin.castShadow = true;
+                legGroup.add(shin);
+
+                // Kiatu cha michezo
+                const shoeGeo = new THREE.BoxGeometry(0.20, 0.14, 0.36);
+                const shoe = new THREE.Mesh(shoeGeo, shoeMat);
+                shoe.position.set(0, -0.88, -0.06);
+                shoe.castShadow = true;
+                legGroup.add(shoe);
+
+                legGroup.position.set(xOffset, 0.9, 0);
+                return legGroup;
+            }
+
+            const leftLeg = createLeg(-0.22);
+            const rightLeg = createLeg(0.22);
+            playerGroup.add(leftLeg);
+            playerGroup.add(rightLeg);
+
+            // Mikono (Arms with swing animation)
+            function createArm(xOffset) {
+                const arm = new THREE.Group();
+                const armGeo = new THREE.CylinderGeometry(0.09, 0.08, 0.65, 8);
+                const armMesh = new THREE.Mesh(armGeo, skinMat);
+                armMesh.position.y = -0.32;
+                armMesh.castShadow = true;
+                arm.add(armMesh);
+                arm.position.set(xOffset, 1.5, 0);
+                return arm;
+            }
+            const leftArm = createArm(-0.44);
+            const rightArm = createArm(0.44);
+            playerGroup.add(leftArm);
+            playerGroup.add(rightArm);
+
+            playerLimbs = [leftLeg, rightLeg, leftArm, rightArm];
+
+            // Real Soft Dynamic Shadow under player
+            const shadowGeo = new THREE.CircleGeometry(0.55, 16);
+            const shadowMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.55 });
+            const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+            shadow.rotation.x = -Math.PI / 2;
+            shadow.position.y = 0.02;
+            playerGroup.add(shadow);
+
+            playerGroup.position.set(0, 0, 0);
+            scene.add(playerGroup);
+        }
+
+        function createJerseyTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = '#0284c7'; // Blue jersey
+            ctx.fillRect(0, 0, 128, 128);
+
+            // Milia ya kijani na njano ya Tanzania
+            ctx.fillStyle = '#eab308';
+            ctx.fillRect(0, 50, 128, 14);
+            ctx.fillStyle = '#16a34a';
+            ctx.fillRect(0, 64, 128, 10);
+
+            // Namba 10 ya mchezaji mgongoni
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 36px Arial';
+            ctx.fillText('10', 44, 42);
+
+            return new THREE.CanvasTexture(canvas);
+        }
+
+        // --- REALISTIC 3D DALADALA (Toyota Coaster / HiAce) ---
+        const daladalaTex = createDaladalaSideTexture();
+
+        function spawnRealisticDaladala(laneX, zPos) {
+            const bus = new THREE.Group();
+
+            // Main Body with real Posta-Mbagala Texture
+            const bodyGeo = new THREE.BoxGeometry(2.1, 1.9, 4.8);
+            const sideMat = new THREE.MeshStandardMaterial({ map: daladalaTex, roughness: 0.4 });
+            const frontRearMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.4 });
+            const materials = [
+                sideMat, sideMat, // Right, Left
+                frontRearMat, frontRearMat, // Top, Bottom
+                frontRearMat, frontRearMat  // Front, Back
+            ];
+            const bodyMesh = new THREE.Mesh(bodyGeo, materials);
+            bodyMesh.position.y = 1.2;
+            bodyMesh.castShadow = true;
+            bus.add(bodyMesh);
+
+            // Front Windshield (Kioo cha mbele chenye bango la njia)
+            const screenGeo = new THREE.PlaneGeometry(1.9, 0.75);
+            const screenMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1 });
+            const screen = new THREE.Mesh(screenGeo, screenMat);
+            screen.position.set(0, 1.55, 2.41);
+            bus.add(screen);
+
+            // Taa za mbele (Headlights za LED zinazowaka)
+            const lightGeo = new THREE.BoxGeometry(0.35, 0.22, 0.05);
+            const lightMat = new THREE.MeshBasicMaterial({ color: 0xfef08a });
+
+            const leftLight = new THREE.Mesh(lightGeo, lightMat);
+            leftLight.position.set(-0.75, 0.9, 2.41);
+            bus.add(leftLight);
+
+            const rightLight = new THREE.Mesh(lightGeo, lightMat);
+            rightLight.position.set(0.75, 0.9, 2.41);
+            bus.add(rightLight);
+
+            // Matairi 4 ya Mpira halisi yenye rim za fedha
+            const tireGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.32, 16);
+            const tireMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.9 });
+            const rimMat = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.8 });
+
+            const wheelOffsets = [
+                [-1.08, 0.38, 1.5], [1.08, 0.38, 1.5],
+                [-1.08, 0.38, -1.5], [1.08, 0.38, -1.5]
+            ];
+            wheelOffsets.forEach(pos => {
+                const wheel = new THREE.Mesh(tireGeo, tireMat);
+                wheel.rotation.z = Math.PI / 2;
+                wheel.position.set(pos[0], pos[1], pos[2]);
+                bus.add(wheel);
+
+                const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.34, 12), rimMat);
+                rim.rotation.z = Math.PI / 2;
+                rim.position.set(pos[0], pos[1], pos[2]);
+                bus.add(rim);
+            });
+
+            bus.position.set(laneX, 0, zPos);
+            bus.userData = { type: 'DALADALA', hitBox: { x: 2.1, y: 1.9, z: 4.6 } };
+            scene.add(bus);
+            obstacles.push(bus);
+        }
+
+        // --- REALISTIC 3D BODABODA (Boxer 150) ---
+        function spawnRealisticBodaboda(laneX, zPos) {
+            const bike = new THREE.Group();
+
+            // Mwendeshaji wa Bodaboda (Jacket ya reflector na kofia ngumu)
+            const jacketGeo = new THREE.BoxGeometry(0.55, 0.72, 0.48);
+            const jacketMat = new THREE.MeshStandardMaterial({ color: 0x84cc16, roughness: 0.6 }); // Neon reflector
+            const jacket = new THREE.Mesh(jacketGeo, jacketMat);
+            jacket.position.y = 1.15;
+            jacket.castShadow = true;
+            bike.add(jacket);
+
+            // Kofia ngumu (Helmet ya pikipiki yenye kioo)
+            const helmetGeo = new THREE.SphereGeometry(0.26, 14, 14);
+            const helmetMat = new THREE.MeshStandardMaterial({ color: 0xea580c, roughness: 0.3 });
+            const helmet = new THREE.Mesh(helmetGeo, helmetMat);
+            helmet.position.set(0, 1.62, 0.05);
+            bike.add(helmet);
+
+            // Bodi ya pikipiki ya Boxer (Metal tank & black frame)
+            const tankGeo = new THREE.BoxGeometry(0.38, 0.3, 0.7);
+            const tankMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.7, roughness: 0.3 }); // Red tank
+            const tank = new THREE.Mesh(tankGeo, tankMat);
+            tank.position.set(0, 0.65, 0.2);
+            bike.add(tank);
+
+            // Matairi 2 ya pikipiki
+            const bikeWheelGeo = new THREE.CylinderGeometry(0.32, 0.32, 0.12, 16);
+            const bikeWheelMat = new THREE.MeshStandardMaterial({ color: 0x09090b });
+
+            const frontWheel = new THREE.Mesh(bikeWheelGeo, bikeWheelMat);
+            frontWheel.rotation.z = Math.PI / 2;
+            frontWheel.position.set(0, 0.32, 0.85);
+            bike.add(frontWheel);
+
+            const rearWheel = new THREE.Mesh(bikeWheelGeo, bikeWheelMat);
+            rearWheel.rotation.z = Math.PI / 2;
+            rearWheel.position.set(0, 0.32, -0.65);
+            bike.add(rearWheel);
+
+            // Taa ya mbele ya Bodaboda (Inayomulika)
+            const frontLight = new THREE.Mesh(new THREE.SphereGeometry(0.12, 8, 8), new THREE.MeshBasicMaterial({ color: 0xfef08a }));
+            frontLight.position.set(0, 0.78, 0.95);
+            bike.add(frontLight);
+
+            bike.position.set(laneX, 0, zPos);
+            bike.userData = { type: 'BODABODA', hitBox: { x: 1.1, y: 1.6, z: 1.9 } };
+            scene.add(bike);
+            obstacles.push(bike);
+        }
+
+        // --- REALISTIC BARRIER (Kizuizi cha Barabara cha Polisi/Ujenzi) ---
+        function spawnRealisticBarrier(laneX, zPos) {
+            const barrier = new THREE.Group();
+
+            // Nguzo za chuma
+            const poleGeo = new THREE.CylinderGeometry(0.08, 0.08, 2.2, 8);
+            const poleMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.7 });
+
+            const p1 = new THREE.Mesh(poleGeo, poleMat);
+            p1.position.set(-1.15, 1.1, 0);
+            barrier.add(p1);
+
+            const p2 = new THREE.Mesh(poleGeo, poleMat);
+            p2.position.set(1.15, 1.1, 0);
+            barrier.add(p2);
+
+            // Boriti ya juu yenye milia ya kuonya ya njano/nyeusi
+            const beamGeo = new THREE.BoxGeometry(2.5, 0.55, 0.22);
+            const beamMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.4 });
+            const beam = new THREE.Mesh(beamGeo, beamMat);
+            beam.position.y = 1.85;
+            beam.castShadow = true;
+            barrier.add(beam);
+
+            barrier.position.set(laneX, 0, zPos);
+            barrier.userData = { type: 'BARRIER', hitBox: { x: 2.3, y: 1.9, z: 0.5 } };
+            scene.add(barrier);
+            obstacles.push(barrier);
+        }
+
+        // --- REALISTIC 3D GOLD COIN (Sarafu ya Dhahabu inayozunguka) ---
+        function spawnRealisticCoin(laneX, zPos) {
+            const coinGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.09, 20);
+            const coinMat = new THREE.MeshStandardMaterial({
+                color: 0xf59e0b,
+                metalness: 0.9,
+                roughness: 0.15
+            });
+            const coin = new THREE.Mesh(coinGeo, coinMat);
+            coin.rotation.x = Math.PI / 2;
+            coin.position.set(laneX, 0.95, zPos);
+            scene.add(coin);
+            coins.push(coin);
+        }
+
+        // --- INPUT & CONTROLS ---
+        function setupInput() {
+            document.getElementById("btn-left").addEventListener("click", () => moveLane(-1));
+            document.getElementById("btn-right").addEventListener("click", () => moveLane(1));
+            document.getElementById("btn-jump").addEventListener("click", doJump);
+            document.getElementById("btn-slide").addEventListener("click", doSlide);
+            document.getElementById("btn-start").addEventListener("click", startGame);
+
+            // Touch Swipe Gestures
+            let touchStartX = 0, touchStartY = 0;
+            window.addEventListener('touchstart', e => {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+
+            window.addEventListener('touchend', e => {
+                const diffX = e.changedTouches[0].screenX - touchStartX;
+                const diffY = e.changedTouches[0].screenY - touchStartY;
+                if (Math.abs(diffX) > Math.abs(diffY)) {
+                    if (diffX > 32) moveLane(1);
+                    else if (diffX < -32) moveLane(-1);
+                } else {
+                    if (diffY < -32) doJump();
+                    else if (diffY > 32) doSlide();
+                }
+            }, { passive: true });
+
+            // Keyboard controls for testing
+            window.addEventListener('keydown', e => {
+                if (e.key === 'ArrowLeft') moveLane(-1);
+                if (e.key === 'ArrowRight') moveLane(1);
+                if (e.key === 'ArrowUp' || e.key === ' ') doJump();
+                if (e.key === 'ArrowDown') doSlide();
+            });
+        }
+
+        function moveLane(dir) {
+            if (!isPlaying) return;
+            soundEngine.init();
+            currentLaneIdx = Math.max(0, Math.min(2, currentLaneIdx + dir));
+            targetLaneX = LANES[currentLaneIdx];
+        }
+
+        function doJump() {
+            if (!isPlaying || isJumping || isSliding) return;
+            soundEngine.init();
+            soundEngine.playJumpSound();
+            isJumping = true;
+            jumpVelocity = 0.25;
+        }
+
+        function doSlide() {
+            if (!isPlaying || isJumping || isSliding) return;
+            soundEngine.init();
+            isSliding = true;
+            playerGroup.scale.set(1.25, 0.45, 1.25);
+            setTimeout(() => {
+                playerGroup.scale.set(1, 1, 1);
+                isSliding = false;
+            }, 550);
+        }
+
+        function startGame() {
+            soundEngine.init();
+            document.getElementById("overlay").style.display = "none";
+            document.getElementById("results-box").style.display = "none";
+
+            distance = 0;
+            coinsCount = 0;
+            gameSpeed = 0.58;
+            currentLaneIdx = 1;
+            targetLaneX = LANES[1];
+            playerGroup.position.set(0, 0, 0);
+
+            // Clear old obstacles
+            obstacles.forEach(o => scene.remove(o));
+            coins.forEach(c => scene.remove(c));
+            obstacles = [];
+            coins = [];
+            lastObstacleZ = -30;
+            lastCoinZ = -22;
+
+            isPlaying = true;
+        }
+
+        function gameOver(reason) {
+            isPlaying = false;
+            soundEngine.playCrashSound();
+
+            if (distance > record) {
+                record = distance;
+                try { localStorage.setItem("dar_runner_record", record); } catch(e){}
+            }
+
+            document.getElementById("modal-icon").innerText = "💥";
+            document.getElementById("modal-title").innerText = "MCHEZO UMEISHA!";
+            document.getElementById("modal-sub").innerText = reason;
+            document.getElementById("res-dist").innerText = distance + "m";
+            document.getElementById("res-coins").innerText = coinsCount + " 🪙";
+            document.getElementById("res-record").innerText = record + "m 🏆";
+            document.getElementById("val-record").innerText = record + "m 🏆";
+
+            document.getElementById("results-box").style.display = "block";
+            document.getElementById("btn-start").innerText = "JARIBU TENA (PLAY AGAIN)";
+            document.getElementById("overlay").style.display = "flex";
+        }
+
+        // --- MAIN GAME LOOP ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (isPlaying) {
+                distance += Math.round(gameSpeed * 1.6);
+                document.getElementById("val-distance").innerText = distance + "m";
+                document.getElementById("val-coins").innerText = coinsCount + " 🪙";
+
+                const currentKmH = Math.round(40 + (gameSpeed - 0.58) * 60);
+                document.getElementById("speed-gauge").innerText = "SPEED: " + currentKmH + " KM/H";
+
+                // Smooth lane change
+                playerGroup.position.x += (targetLaneX - playerGroup.position.x) * 0.24;
+
+                // Jump Physics
+                if (isJumping) {
+                    playerGroup.position.y += jumpVelocity;
+                    jumpVelocity -= 0.015;
+                    if (playerGroup.position.y <= 0) {
+                        playerGroup.position.y = 0;
+                        isJumping = false;
+                    }
+                }
+
+                // Realistic Running Limbs Animation (Opposite arm & leg swings)
+                if (!isJumping && !isSliding) {
+                    const runCycle = Math.sin(Date.now() * 0.016);
+                    // Left leg vs Right leg
+                    playerLimbs[0].rotation.x = runCycle * 0.65;
+                    playerLimbs[1].rotation.x = -runCycle * 0.65;
+                    // Left arm vs Right arm
+                    playerLimbs[2].rotation.x = -runCycle * 0.65;
+                    playerLimbs[3].rotation.x = runCycle * 0.65;
+                }
+
+                // Speed acceleration over distance
+                gameSpeed = Math.min(1.22, 0.58 + (distance / 3500) * 0.45);
+
+                // Spawn Obstacles (Daladala za Posta/Mbagala, Bodaboda, Vizuizi)
+                if (lastObstacleZ > -60) {
+                    const lane = LANES[Math.floor(Math.random() * 3)];
+                    const z = -95 - Math.random() * 25;
+                    const r = Math.random();
+                    if (r < 0.48) {
+                        spawnRealisticDaladala(lane, z);
+                        if (Math.random() < 0.3) soundEngine.playHornSound();
+                    } else if (r < 0.78) {
+                        spawnRealisticBodaboda(lane, z);
+                    } else {
+                        spawnRealisticBarrier(lane, z);
+                    }
+                    lastObstacleZ = z;
+                } else {
+                    lastObstacleZ += gameSpeed;
+                }
+
+                // Spawn Coins in triplets
+                if (lastCoinZ > -45) {
+                    const lane = LANES[Math.floor(Math.random() * 3)];
+                    const z = -90;
+                    for (let c = 0; c < 3; c++) {
+                        spawnRealisticCoin(lane, z - c * 3.0);
+                    }
+                    lastCoinZ = z - 9;
+                } else {
+                    lastCoinZ += gameSpeed;
+                }
+
+                // Move & Collect 3D Coins
+                for (let i = coins.length - 1; i >= 0; i--) {
+                    const coin = coins[i];
+                    coin.position.z += gameSpeed;
+                    coin.rotation.z += 0.06; // Real 3D spin
+
+                    const dx = Math.abs(coin.position.x - playerGroup.position.x);
+                    const dz = Math.abs(coin.position.z - playerGroup.position.z);
+                    if (dx < 1.0 && dz < 1.2 && playerGroup.position.y < 1.7) {
+                        scene.remove(coin);
+                        coins.splice(i, 1);
+                        coinsCount += 1;
+                        soundEngine.playCoinSound();
+                        continue;
+                    }
+                    if (coin.position.z > 9) {
+                        scene.remove(coin);
+                        coins.splice(i, 1);
+                    }
+                }
+
+                // Move & Collide Obstacles
+                for (let i = obstacles.length - 1; i >= 0; i--) {
+                    const obs = obstacles[i];
+                    obs.position.z += gameSpeed;
+
+                    const dx = Math.abs(obs.position.x - playerGroup.position.x);
+                    const dz = Math.abs(obs.position.z - playerGroup.position.z);
+                    const box = obs.userData.hitBox;
+
+                    if (dx < box.x * 0.72 && dz < box.z * 0.58) {
+                        if (obs.userData.type === 'DALADALA') {
+                            gameOver("Uligongana na Daladala ya Posta-Mbagala! 🚌");
+                            break;
+                        } else if (obs.userData.type === 'BODABODA') {
+                            if (!isJumping) {
+                                gameOver("Uligongana na Bodaboda ya Boxer! 🏍️");
+                                break;
+                            }
+                        } else if (obs.userData.type === 'BARRIER') {
+                            if (!isSliding) {
+                                gameOver("Uligonga Kizuizi cha Barabara! 🚧");
+                                break;
+                            }
+                        }
+                    }
+
+                    if (obs.position.z > 14) {
+                        scene.remove(obs);
+                        obstacles.splice(i, 1);
+                    }
+                }
+
+                // Loop Scenery Props (Duka la M-Pesa, Nguzo za TANESCO & Mitende)
+                sceneryObjects.forEach(prop => {
+                    prop.position.z += gameSpeed;
+                    if (prop.position.z > 12) {
+                        prop.position.z = -188;
+                    }
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.onload = () => {
+            init3D();
+            animate();
+        };
+    </script>
+</body>
+</html>
